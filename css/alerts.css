@@ -208,3 +208,18 @@
   margin-top: 16px;
   border: 1px solid var(--border);
 }
+
+/* Toast dismiss button */
+.toast-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 0 0 8px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  line-height: 1;
+  margin-top: 2px;
+}
+.toast-dismiss:hover { color: var(--text-primary); }

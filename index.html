@@ -1,283 +1,222 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="GeoAlert — Monitoreo de desastres naturales en tiempo real: terremotos, tsunamis, volcanes y más."
-    />
-    <meta property="og:title" content="GeoAlert — Desastres en Tiempo Real" />
-    <meta
-      property="og:description"
-      content="Monitorea sismos, tsunamis y desastres naturales en todo el mundo."
-    />
-    <meta property="og:image" content="assets/images/og-image.png" />
-    <title>GeoAlert — Desastres en Tiempo Real</title>
-    <link rel="icon" href="assets/favicon.ico" />
-    <link rel="manifest" href="manifest.json" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GeoAlert — Monitoreo de desastres naturales en tiempo real: terremotos, tsunamis, volcanes y más." />
+  <meta property="og:title" content="GeoAlert — Desastres en Tiempo Real" />
+  <meta property="og:description" content="Monitorea sismos, tsunamis y desastres naturales en todo el mundo." />
+  <meta property="og:image" content="assets/images/og-image.png" />
+  <title>GeoAlert — Desastres en Tiempo Real</title>
+  <link rel="icon" href="assets/favicon.ico" />
+  <link rel="manifest" href="manifest.json" />
 
-    <!-- Leaflet CSS -->
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-    <!-- Leaflet MarkerCluster CSS -->
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
-    />
-    <!-- App CSS -->
-    <link rel="stylesheet" href="css/main.css" />
-    <link rel="stylesheet" href="css/map.css" />
-    <link rel="stylesheet" href="css/sidebar.css" />
-    <link rel="stylesheet" href="css/alerts.css" />
-    <link rel="stylesheet" href="css/filters.css" />
-    <link rel="stylesheet" href="css/responsive.css" />
-  </head>
-  <body class="dark-mode">
-    <!-- HEADER -->
-    <header class="app-header">
-      <div class="header-left">
-        <div class="logo">
-          <span class="logo-icon">🌍</span>
-          <span class="logo-text">GeoAlert</span>
-          <span class="logo-badge">LIVE</span>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <!-- App CSS -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/map.css" />
+  <link rel="stylesheet" href="css/sidebar.css" />
+  <link rel="stylesheet" href="css/alerts.css" />
+  <link rel="stylesheet" href="css/filters.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body class="dark-mode">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-icon">🌍</span>
+        <span class="logo-text">GeoAlert</span>
+        <span class="logo-badge">LIVE</span>
+      </div>
+    </div>
+    <div class="header-center">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Buscar lugar, país o coordenadas..." autocomplete="off" />
+        <div id="searchResults" class="search-results hidden"></div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-label">Últimas 24h</span>
+          <span class="stat-value" id="statTotal">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Mag. máx.</span>
+          <span class="stat-value" id="statMaxMag">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Alertas activas</span>
+          <span class="stat-value alert-red" id="statAlerts">—</span>
         </div>
       </div>
-      <div class="header-center">
-        <div class="search-wrapper">
-          <span class="search-icon">🔍</span>
-          <input
-            type="text"
-            id="searchInput"
-            class="search-input"
-            placeholder="Buscar lugar, país o coordenadas..."
-            autocomplete="off"
-          />
-          <div id="searchResults" class="search-results hidden"></div>
-        </div>
+      <button id="themeToggle" class="btn-icon" title="Cambiar tema">🌙</button>
+      <button id="notifToggle" class="btn-icon" title="Notificaciones">🔔</button>
+    </div>
+  </header>
+
+  <!-- ALERT BANNER -->
+  <div id="alertBanner" class="alert-banner hidden"></div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- MAIN LAYOUT -->
+  <main class="app-main">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2 class="sidebar-title">Eventos Recientes</h2>
+        <button id="sidebarToggle" class="btn-icon">◀</button>
       </div>
-      <div class="header-right">
-        <div class="stats-bar">
-          <div class="stat-item">
-            <span class="stat-label">Últimas 24h</span>
-            <span class="stat-value" id="statTotal">—</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Mag. máx.</span>
-            <span class="stat-value" id="statMaxMag">—</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Alertas activas</span>
-            <span class="stat-value alert-red" id="statAlerts">—</span>
+
+      <!-- FILTERS -->
+      <div class="filters-panel">
+        <div class="filter-group">
+          <label class="filter-label">Tipo de desastre</label>
+          <div class="filter-chips" id="typeFilters">
+            <button class="chip active" data-type="earthquake">🔴 Sismo</button>
+            <button class="chip active" data-type="tsunami">🌊 Tsunami</button>
+            <button class="chip active" data-type="volcano">🌋 Volcán</button>
+            <button class="chip active" data-type="cyclone">🌀 Ciclón</button>
+            <button class="chip active" data-type="flood">💧 Inundación</button>
           </div>
         </div>
-        <button id="themeToggle" class="btn-icon" title="Cambiar tema">
-          🌙
-        </button>
-        <button id="notifToggle" class="btn-icon" title="Notificaciones">
-          🔔
-        </button>
+        <div class="filter-group">
+          <label class="filter-label">Magnitud mínima: <span id="magLabel">3.0</span></label>
+          <input type="range" id="magFilter" class="range-slider" min="0" max="10" step="0.5" value="3" />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Período de tiempo</label>
+          <select id="timeFilter" class="select-input">
+            <option value="1">Última hora</option>
+            <option value="24" selected>Últimas 24 horas</option>
+            <option value="168">Última semana</option>
+            <option value="720">Último mes</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Vista del mapa</label>
+          <select id="mapStyle" class="select-input">
+            <optgroup label="— Estilos base —">
+              <option value="dark">Oscuro</option>
+              <option value="satellite">Satélite (Esri)</option>
+              <option value="topo">Topográfico</option>
+              <option value="streets">Calles</option>
+            </optgroup>
+            <optgroup label="🛰 NASA Earthdata (~24h)">
+              <option value="nasa_terra">🛰 Terra MODIS — true color</option>
+              <option value="nasa_aqua">🛰 Aqua MODIS — true color</option>
+              <option value="nasa_dust">🛰 Dust &amp; volcanic ash</option>
+              <option value="nasa_fires">🔥 Active fires (overlay)</option>
+              <option value="nasa_storms">⛈ GOES-East storms (10 min)</option>
+            </optgroup>
+            <optgroup label="🛰 Sentinel-2 ESA (5 days · 10m)">
+              <option value="sentinel_true">🛰 True color — 10m resolution</option>
+              <option value="sentinel_false">🛰 False color — vegetation</option>
+              <option value="sentinel_swir">🛰 SWIR — fires &amp; burn scars</option>
+            </optgroup>
+          </select>
+        </div>
+        <button id="applyFilters" class="btn-primary">Aplicar filtros</button>
       </div>
-    </header>
 
-    <!-- ALERT BANNER -->
-    <div id="alertBanner" class="alert-banner hidden"></div>
-
-    <!-- TOAST CONTAINER -->
-    <div id="toastContainer" class="toast-container"></div>
-
-    <!-- MAIN LAYOUT -->
-    <main class="app-main">
-      <!-- SIDEBAR -->
-      <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-          <h2 class="sidebar-title">Eventos Recientes</h2>
-          <button id="sidebarToggle" class="btn-icon">◀</button>
-        </div>
-
-        <!-- FILTERS -->
-        <div class="filters-panel">
-          <div class="filter-group">
-            <label class="filter-label">Tipo de desastre</label>
-            <div class="filter-chips" id="typeFilters">
-              <button class="chip active" data-type="earthquake">
-                🔴 Sismo
-              </button>
-              <button class="chip active" data-type="tsunami">
-                🌊 Tsunami
-              </button>
-              <button class="chip active" data-type="volcano">🌋 Volcán</button>
-              <button class="chip active" data-type="cyclone">🌀 Ciclón</button>
-              <button class="chip active" data-type="flood">
-                💧 Inundación
-              </button>
-            </div>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label"
-              >Magnitud mínima: <span id="magLabel">3.0</span></label
-            >
-            <input
-              type="range"
-              id="magFilter"
-              class="range-slider"
-              min="0"
-              max="10"
-              step="0.5"
-              value="3"
-            />
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Período de tiempo</label>
-            <select id="timeFilter" class="select-input">
-              <option value="1">Última hora</option>
-              <option value="24" selected>Últimas 24 horas</option>
-              <option value="168">Última semana</option>
-              <option value="720">Último mes</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Vista del mapa</label>
-            <select id="mapStyle" class="select-input">
-              <optgroup label="— Estilos base —">
-                <option value="dark">Oscuro</option>
-                <option value="satellite">Satélite (Esri)</option>
-                <option value="topo">Topográfico</option>
-                <option value="streets">Calles</option>
-              </optgroup>
-              <optgroup label="🛰 NASA Earthdata (reales)">
-                <option value="nasa_terra">
-                  🛰 Terra MODIS · color real (~24h)
-                </option>
-                <option value="nasa_aqua">
-                  🛰 Aqua MODIS · color real (~24h)
-                </option>
-                <option value="nasa_dust">🛰 Polvo y ceniza volcánica</option>
-                <option value="nasa_fires">
-                  🔥 Incendios activos (overlay)
-                </option>
-                <option value="nasa_storms">
-                  ⛈ GOES-East · tormentas (10 min)
-                </option>
-              </optgroup>
-            </select>
-          </div>
-          <button id="applyFilters" class="btn-primary">Aplicar filtros</button>
-        </div>
-
-        <!-- EVENT LIST -->
-        <div class="event-list-header">
-          <span id="eventCount" class="event-count">Cargando eventos...</span>
-          <button id="exportBtn" class="btn-small">⬇ Exportar CSV</button>
-        </div>
-        <ul class="event-list" id="eventList">
-          <li class="event-loading">
-            <div class="loading-spinner"></div>
-            <span>Conectando con APIs de datos...</span>
-          </li>
-        </ul>
-      </aside>
-
-      <!-- MAP CONTAINER -->
-      <div class="map-wrapper">
-        <div id="map"></div>
-
-        <!-- MAP CONTROLS -->
-        <div class="map-controls">
-          <button class="map-btn" id="btnHeatmap" title="Capa de calor">
-            🔥
-          </button>
-          <button class="map-btn" id="btnClusters" title="Modo clusters">
-            ⬡
-          </button>
-          <button class="map-btn" id="btnReset" title="Centrar mapa">⊙</button>
-          <button class="map-btn" id="btnFullscreen" title="Pantalla completa">
-            ⛶
-          </button>
-        </div>
-
-        <!-- LAYER LEGEND -->
-        <div class="map-legend">
-          <div class="legend-title">Escala de magnitud</div>
-          <div class="legend-items">
-            <div class="legend-item">
-              <span class="legend-dot" style="background: #fde68a"></span> &lt;
-              3.0
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot" style="background: #fb923c"></span>
-              3.0–5.0
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot" style="background: #ef4444"></span>
-              5.0–6.5
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot" style="background: #b91c1c"></span> &gt;
-              6.5
-            </div>
-          </div>
-          <div class="legend-hint">
-            🔍 Acércate al mapa para ver los rangos de impacto de cada evento
-          </div>
-        </div>
-
-        <!-- STATUS BAR -->
-        <div class="status-bar">
-          <span id="statusText" class="status-text">🟡 Conectando...</span>
-          <span id="lastUpdate" class="last-update"></span>
-          <span id="nextUpdate" class="next-update"></span>
-        </div>
+      <!-- EVENT LIST -->
+      <div class="event-list-header">
+        <span id="eventCount" class="event-count">Cargando eventos...</span>
+        <button id="exportBtn" class="btn-small">⬇ Exportar CSV</button>
       </div>
-    </main>
+      <ul class="event-list" id="eventList">
+        <li class="event-loading">
+          <div class="loading-spinner"></div>
+          <span>Conectando con APIs de datos...</span>
+        </li>
+      </ul>
+    </aside>
 
-    <!-- EVENT DETAIL MODAL -->
-    <div id="eventModal" class="modal-overlay hidden">
-      <div class="modal-card">
-        <button class="modal-close" id="modalClose">✕</button>
-        <div class="modal-header" id="modalHeader"></div>
-        <div class="modal-body" id="modalBody"></div>
-        <div class="modal-footer" id="modalFooter"></div>
+    <!-- MAP CONTAINER -->
+    <div class="map-wrapper">
+      <div id="map"></div>
+
+      <!-- MAP CONTROLS -->
+      <div class="map-controls">
+        <button class="map-btn" id="btnHeatmap" title="Capa de calor">🔥</button>
+        <button class="map-btn" id="btnClusters" title="Modo clusters">⬡</button>
+        <button class="map-btn" id="btnReset" title="Centrar mapa">⊙</button>
+        <button class="map-btn" id="btnFullscreen" title="Pantalla completa">⛶</button>
+      </div>
+
+      <!-- LAYER LEGEND -->
+      <div class="map-legend">
+        <div class="legend-title">Escala de magnitud</div>
+        <div class="legend-items">
+          <div class="legend-item"><span class="legend-dot" style="background:#FDE68A"></span> &lt; 3.0</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#FB923C"></span> 3.0–5.0</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#EF4444"></span> 5.0–6.5</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#B91C1C"></span> &gt; 6.5</div>
+        </div>
+        <div class="legend-hint">🔍 Acércate al mapa para ver los rangos de impacto de cada evento</div>
+      </div>
+
+      <!-- STATUS BAR -->
+      <div class="status-bar">
+        <span id="statusText" class="status-text">🟡 Conectando...</span>
+        <span id="lastUpdate" class="last-update"></span>
+        <span id="nextUpdate" class="next-update"></span>
       </div>
     </div>
 
-    <!-- Scripts externos -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  </main>
 
-    <!-- App scripts -->
-    <script src="js/core/config.js"></script>
-    <script src="js/core/state.js"></script>
-    <script src="js/utils/geoUtils.js"></script>
-    <script src="js/utils/dateUtils.js"></script>
-    <script src="js/utils/colorScale.js"></script>
-    <script src="js/utils/notifications.js"></script>
-    <script src="js/utils/exportUtils.js"></script>
-    <script src="js/map/mapInit.js"></script>
-    <script src="js/map/markers.js"></script>
-    <script src="js/map/clusters.js"></script>
-    <script src="js/map/heatmap.js"></script>
-    <script src="js/map/layers.js"></script>
-    <script src="js/api/cache.js"></script>
-    <script src="js/api/usgs.js"></script>
-    <script src="js/api/gdacs.js"></script>
-    <script src="js/api/noaa.js"></script>
-    <script src="js/api/scheduler.js"></script>
-    <script src="js/ui/sidebar.js"></script>
-    <script src="js/ui/modal.js"></script>
-    <script src="js/ui/filters.js"></script>
-    <script src="js/ui/alerts.js"></script>
-    <script src="js/ui/stats.js"></script>
-    <script src="js/ui/search.js"></script>
-    <script src="js/ui/theme.js"></script>
-    <script src="js/core/router.js"></script>
-    <script src="js/core/app.js"></script>
-  </body>
+  <!-- EVENT DETAIL MODAL -->
+  <div id="eventModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <button class="modal-close" id="modalClose">✕</button>
+      <div class="modal-header" id="modalHeader"></div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <!-- Scripts externos -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+  <!-- App scripts -->
+  <script src="js/core/config.js"></script>
+  <script src="js/core/state.js"></script>
+  <script src="js/utils/geoUtils.js"></script>
+  <script src="js/utils/dateUtils.js"></script>
+  <script src="js/utils/colorScale.js"></script>
+  <script src="js/utils/notifications.js"></script>
+  <script src="js/utils/exportUtils.js"></script>
+  <script src="js/map/mapInit.js"></script>
+  <script src="js/map/markers.js"></script>
+  <script src="js/map/clusters.js"></script>
+  <script src="js/map/heatmap.js"></script>
+  <script src="js/map/layers.js"></script>
+  <script src="js/api/cache.js"></script>
+  <script src="js/api/usgs.js"></script>
+  <script src="js/api/gdacs.js"></script>
+  <script src="js/api/noaa.js"></script>
+  <script src="js/api/scheduler.js"></script>
+  <script src="js/ui/sidebar.js"></script>
+  <script src="js/ui/modal.js"></script>
+  <script src="js/ui/filters.js"></script>
+  <script src="js/ui/alerts.js"></script>
+  <script src="js/ui/stats.js"></script>
+  <script src="js/ui/search.js"></script>
+  <script src="js/ui/theme.js"></script>
+  <script src="js/core/router.js"></script>
+  <script src="js/core/app.js"></script>
+</body>
 </html>

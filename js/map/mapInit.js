@@ -1,123 +1,125 @@
 /* ============================================================
    GEOALERT — js/map/mapInit.js
-   Inicializa el mapa Leaflet con capas base + NASA GIBS
+   Mapa Leaflet con NASA GIBS + Sentinel-2 (ESA Copernicus)
    ============================================================ */
 
 GeoAlert.MapInit = (function () {
-  let map = null;
-  let baseLayer = null; // capa base activa (carto, esri, osm…)
-  let nasaLayer = null; // capa NASA GIBS activa
-  let nasaOverlay = null; // overlay adicional (incendios encima de base)
-  let nasaDateStr = ""; // fecha formateada para GIBS
+  let map         = null;
+  let baseLayer   = null;
+  let nasaLayer   = null;
+  let nasaOverlay = null;
+  let nasaDateStr = '';
 
-  /* ---- Calcular fecha NASA (ayer UTC para asegurar disponibilidad) ---- */
   function getNasaDate(daysBack = 1) {
     const d = new Date(Date.now() - daysBack * 86400000);
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-    const day = String(d.getUTCDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
   }
 
-  /* ---- Crear tile NASA GIBS con fecha en la URL ---- */
   function buildNasaTile(style) {
     const cfg = GeoAlert.CONFIG.TILES[style];
     if (!cfg) return null;
-    const url = cfg.url.replace("{date}", nasaDateStr);
+    const url = cfg.url
+      .replace('{date}', nasaDateStr)
+      .replace('{instanceId}', GeoAlert.CONFIG.API.SENTINEL_INSTANCE || '');
     return L.tileLayer(url, {
       attribution: cfg.attribution,
-      maxZoom: cfg.maxZoom || 9,
-      tileSize: 256,
-      opacity: 0.92,
+      maxZoom:     cfg.maxZoom || 9,
+      tileSize:    256,
+      opacity:     0.93,
     });
   }
 
   function init() {
-    const cfg = GeoAlert.CONFIG;
     nasaDateStr = getNasaDate(1);
 
-    map = L.map("map", {
-      center: cfg.MAP.center,
-      zoom: cfg.MAP.zoom,
-      minZoom: cfg.MAP.minZoom,
-      maxZoom: cfg.MAP.maxZoom,
+    map = L.map('map', {
+      center:    GeoAlert.CONFIG.MAP.center,
+      zoom:      GeoAlert.CONFIG.MAP.zoom,
+      minZoom:   GeoAlert.CONFIG.MAP.minZoom,
+      maxZoom:   GeoAlert.CONFIG.MAP.maxZoom,
       zoomControl: true,
       attributionControl: true,
     });
-    map.zoomControl.setPosition("bottomright");
+    map.zoomControl.setPosition('bottomright');
 
-    // Capa base inicial
-    setBaseLayer("dark");
-
-    // Exponer mapa globalmente
+    setBaseLayer('dark');
     GeoAlert.map = map;
 
-    // Cambio de estilo desde el selector
-    document.getElementById("mapStyle")?.addEventListener("change", (e) => {
-      const val = e.target.value;
-      GeoAlert.State.set("map", { style: val });
-      applyStyle(val);
+    // Selector de estilo
+    document.getElementById('mapStyle')?.addEventListener('change', (e) => {
+      applyStyle(e.target.value);
+      GeoAlert.State.set('map', { style: e.target.value });
     });
 
-    // Botón reset
-    document.getElementById("btnReset")?.addEventListener("click", () => {
-      map.setView(cfg.MAP.center, cfg.MAP.zoom);
+    document.getElementById('btnReset')?.addEventListener('click', () =>
+      map.setView(GeoAlert.CONFIG.MAP.center, GeoAlert.CONFIG.MAP.zoom)
+    );
+    document.getElementById('btnFullscreen')?.addEventListener('click', () => {
+      const el = document.getElementById('map');
+      document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen?.();
     });
 
-    // Botón fullscreen
-    document.getElementById("btnFullscreen")?.addEventListener("click", () => {
-      const el = document.getElementById("map");
-      if (!document.fullscreenElement) {
-        el.requestFullscreen?.() || el.webkitRequestFullscreen?.();
-      } else {
-        document.exitFullscreen?.();
-      }
-    });
-
-    // Actualizar fecha NASA cada hora
+    // Recalcular fecha NASA cada hora
     setInterval(() => {
       nasaDateStr = getNasaDate(1);
-      const currentStyle = GeoAlert.State.get("map").style;
-      if (currentStyle?.startsWith("nasa")) applyStyle(currentStyle);
+      const st = GeoAlert.State.get('map').style;
+      if (st?.startsWith('nasa') || st?.startsWith('sentinel')) applyStyle(st);
+      updateNasaDateBadge();
     }, GeoAlert.CONFIG.REFRESH.nasaDate);
 
-    // Panel NASA
     buildNasaPanel();
+    buildSentinelKeyModal();
     updateNasaDateBadge();
 
-    console.log("[MapInit] Mapa inicializado ✓ · Fecha NASA:", nasaDateStr);
+    GeoAlert.Markers.bindZoomListener(map);
+    console.log('[MapInit] ✓ NASA date:', nasaDateStr);
     return map;
   }
 
-  /* ---- Aplica el estilo seleccionado ---- */
+  /* ---- Aplicar estilo ---- */
   function applyStyle(style) {
-    const tileCfg = GeoAlert.CONFIG.TILES[style];
-    if (!tileCfg) return;
+    const cfg = GeoAlert.CONFIG.TILES[style];
+    if (!cfg) return;
 
-    if (tileCfg.type === "base") {
-      // Quitar capa NASA si había
+    // Sentinel requiere key
+    if (cfg.type === 'sentinel') {
+      if (!GeoAlert.CONFIG.API.SENTINEL_INSTANCE) {
+        showSentinelKeyModal(style);
+        // Resetear selector al valor anterior
+        document.getElementById('mapStyle').value = GeoAlert.State.get('map').style || 'dark';
+        return;
+      }
+    }
+
+    if (cfg.type === 'base') {
       clearNasaLayers();
       setBaseLayer(style);
-    } else if (tileCfg.type === "nasa") {
-      // NASA reemplaza la capa base completamente
+
+    } else if (cfg.type === 'nasa') {
       clearNasaLayers();
-      // Poner satélite Esri de fondo para zonas sin cobertura MODIS
-      setBaseLayer("satellite");
+      setBaseLayer('satellite');   // fondo Esri para zonas sin cobertura MODIS
       nasaLayer = buildNasaTile(style);
-      if (nasaLayer) nasaLayer.addTo(map);
-      showNasaInfo(tileCfg);
-    } else if (tileCfg.type === "nasa_overlay") {
-      // Incendios se ponen encima de la capa base actual sin reemplazarla
+      nasaLayer?.addTo(map);
+      showNasaInfo(cfg);
+
+    } else if (cfg.type === 'nasa_overlay') {
       if (nasaOverlay) map.removeLayer(nasaOverlay);
       nasaOverlay = buildNasaTile(style);
-      if (nasaOverlay) nasaOverlay.addTo(map);
-      showNasaInfo(tileCfg);
-    } else if (tileCfg.type === "nasa_realtime") {
-      // GOES-East reemplaza todo
+      nasaOverlay?.addTo(map);
+      showNasaInfo(cfg);
+
+    } else if (cfg.type === 'nasa_realtime') {
       clearNasaLayers();
       nasaLayer = buildNasaTile(style);
-      if (nasaLayer) nasaLayer.addTo(map);
-      showNasaInfo(tileCfg);
+      nasaLayer?.addTo(map);
+      showNasaInfo(cfg);
+
+    } else if (cfg.type === 'sentinel') {
+      clearNasaLayers();
+      setBaseLayer('dark');
+      nasaLayer = buildNasaTile(style);
+      nasaLayer?.addTo(map);
+      showNasaInfo(cfg);
     }
 
     updateNasaDateBadge();
@@ -128,85 +130,129 @@ GeoAlert.MapInit = (function () {
     if (baseLayer) map.removeLayer(baseLayer);
     baseLayer = L.tileLayer(cfg.url, {
       attribution: cfg.attribution,
-      maxZoom: cfg.maxZoom,
-      subdomains: "abcd",
+      maxZoom:     cfg.maxZoom,
+      subdomains:  'abcd',
     }).addTo(map);
-    // Base va siempre abajo
     baseLayer.setZIndex(1);
-    if (nasaLayer) nasaLayer.setZIndex(2);
-    if (nasaOverlay) nasaOverlay.setZIndex(3);
+    nasaLayer?.setZIndex(2);
+    nasaOverlay?.setZIndex(3);
   }
 
   function clearNasaLayers() {
-    if (nasaLayer) {
-      map.removeLayer(nasaLayer);
-      nasaLayer = null;
-    }
-    if (nasaOverlay) {
-      map.removeLayer(nasaOverlay);
-      nasaOverlay = null;
-    }
-    hideNasaInfo();
+    if (nasaLayer)   { map.removeLayer(nasaLayer);   nasaLayer   = null; }
+    if (nasaOverlay) { map.removeLayer(nasaOverlay); nasaOverlay = null; }
+    document.getElementById('nasaPanel')?.classList.add('hidden');
   }
 
-  /* ---- Panel de info NASA (aparece al activar capa NASA) ---- */
+  /* ---- Panel de info de capa activa ---- */
   function buildNasaPanel() {
-    const panel = document.createElement("div");
-    panel.id = "nasaPanel";
-    panel.className = "nasa-panel hidden";
-    panel.innerHTML = `
+    if (document.getElementById('nasaPanel')) return;
+    const p = document.createElement('div');
+    p.id        = 'nasaPanel';
+    p.className = 'nasa-panel hidden';
+    p.innerHTML = `
       <div class="nasa-panel-header">
         <span class="nasa-logo">🛰</span>
         <div>
-          <div class="nasa-panel-title">NASA Earthdata</div>
+          <div class="nasa-panel-title" id="nasaPanelTitle">NASA Earthdata</div>
           <div class="nasa-panel-date" id="nasaDateLabel"></div>
         </div>
         <button class="nasa-panel-close" onclick="document.getElementById('nasaPanel').classList.add('hidden')">✕</button>
       </div>
       <div class="nasa-panel-desc" id="nasaDesc"></div>
       <div class="nasa-panel-links">
-        <a href="https://worldview.earthdata.nasa.gov" target="_blank" rel="noopener">Ver en NASA Worldview →</a>
+        <a href="https://worldview.earthdata.nasa.gov" target="_blank" rel="noopener">Open NASA Worldview →</a>
+        &nbsp;·&nbsp;
+        <a href="https://www.sentinel-hub.com/explore/eobrowser/" target="_blank" rel="noopener">Open EO Browser →</a>
       </div>
     `;
-    document.querySelector(".map-wrapper")?.appendChild(panel);
+    document.querySelector('.map-wrapper')?.appendChild(p);
   }
 
   function showNasaInfo(tileCfg) {
-    const panel = document.getElementById("nasaPanel");
-    const desc = document.getElementById("nasaDesc");
-    if (panel) panel.classList.remove("hidden");
-    if (desc) desc.textContent = tileCfg.description || "";
+    const p = document.getElementById('nasaPanel');
+    if (p) p.classList.remove('hidden');
+    const t = document.getElementById('nasaPanelTitle');
+    if (t) t.textContent = tileCfg.label || 'Satellite imagery';
+    const d = document.getElementById('nasaDesc');
+    if (d) d.textContent = tileCfg.description || '';
     updateNasaDateBadge();
   }
 
-  function hideNasaInfo() {
-    document.getElementById("nasaPanel")?.classList.add("hidden");
-  }
-
   function updateNasaDateBadge() {
-    const el = document.getElementById("nasaDateLabel");
-    if (el) el.textContent = `Imágenes: ${nasaDateStr} UTC`;
-    // También actualizar badge en el selector si existe
-    const badge = document.getElementById("nasaDateBadge");
-    if (badge) badge.textContent = nasaDateStr;
+    const el = document.getElementById('nasaDateLabel');
+    if (el) el.textContent = `Images: ${nasaDateStr} UTC`;
   }
 
-  function getMap() {
-    return map;
-  }
-  function getNasaDate_() {
-    return nasaDateStr;
-  }
-  function flyTo(lat, lng, zoom = 8) {
-    map.flyTo([lat, lng], zoom, { duration: 1.2 });
+  /* ---- Modal para introducir Sentinel Instance ID ---- */
+  function buildSentinelKeyModal() {
+    if (document.getElementById('sentinelModal')) return;
+    const m = document.createElement('div');
+    m.id        = 'sentinelModal';
+    m.className = 'sentinel-modal hidden';
+    m.innerHTML = `
+      <div class="sentinel-modal-card">
+        <div class="sentinel-modal-header">
+          <span>🛰 Sentinel-2 Setup</span>
+          <button onclick="document.getElementById('sentinelModal').classList.add('hidden')">✕</button>
+        </div>
+        <p class="sentinel-modal-desc">
+          Sentinel-2 requires a free <strong>Sentinel Hub</strong> account.<br>
+          Resolution: <strong>10 meters</strong> · Revisit: <strong>every 5 days</strong> · Cost: <strong>Free</strong>
+        </p>
+        <ol class="sentinel-modal-steps">
+          <li>Go to <a href="https://www.sentinel-hub.com" target="_blank">sentinel-hub.com</a> and create a free account</li>
+          <li>Create a new Configuration (any name)</li>
+          <li>Copy the <strong>Instance ID</strong> from your dashboard</li>
+          <li>Paste it below and click Save</li>
+        </ol>
+        <div class="sentinel-modal-input-row">
+          <input type="text" id="sentinelInstanceInput" placeholder="e.g. a1b2c3d4-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+          <button onclick="GeoAlert.MapInit.saveSentinelKey()">Save & Apply</button>
+        </div>
+        <div id="sentinelModalMsg" class="sentinel-modal-msg"></div>
+      </div>
+    `;
+    document.body.appendChild(m);
   }
 
-  return {
-    init,
-    getMap,
-    flyTo,
-    applyStyle,
-    setBaseLayer,
-    getNasaDate: getNasaDate_,
-  };
+  function showSentinelKeyModal(pendingStyle) {
+    const m = document.getElementById('sentinelModal');
+    if (m) {
+      m.classList.remove('hidden');
+      m._pendingStyle = pendingStyle;
+    }
+  }
+
+  function saveSentinelKey() {
+    const val = document.getElementById('sentinelInstanceInput')?.value?.trim();
+    const msg = document.getElementById('sentinelModalMsg');
+    if (!val || val.length < 10) {
+      if (msg) msg.textContent = '⚠ Please enter a valid Instance ID.';
+      return;
+    }
+    GeoAlert.CONFIG.API.SENTINEL_INSTANCE = val;
+    localStorage.setItem('geoalert_sentinel_id', val);
+    if (msg) { msg.style.color = '#3fb950'; msg.textContent = '✓ Saved! Loading imagery...'; }
+    setTimeout(() => {
+      const m = document.getElementById('sentinelModal');
+      const pending = m?._pendingStyle;
+      m?.classList.add('hidden');
+      if (pending) {
+        document.getElementById('mapStyle').value = pending;
+        applyStyle(pending);
+      }
+    }, 800);
+  }
+
+  // Restaurar key guardada
+  const savedKey = localStorage.getItem('geoalert_sentinel_id');
+  if (savedKey) GeoAlert.CONFIG.API.SENTINEL_INSTANCE = savedKey;
+
+  function getMap()  { return map; }
+  function flyTo(lat, lng, zoom = 8) { map.flyTo([lat, lng], zoom, { duration: 1.2 }); }
+  function getNasaDateStr() { return nasaDateStr; }
+
+  return { init, getMap, flyTo, applyStyle, setBaseLayer, saveSentinelKey, getNasaDate: getNasaDateStr };
+
 })();
