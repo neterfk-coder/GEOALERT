@@ -1,0 +1,8 @@
+{
+  "earthquake": { "id": "earthquake", "label": "Terremoto / Sismo", "icon": "🔴", "color": "#EF4444", "source": "USGS" },
+  "tsunami":    { "id": "tsunami",    "label": "Tsunami",            "icon": "🌊", "color": "#0EA5E9", "source": "NOAA/GDACS" },
+  "volcano":    { "id": "volcano",    "label": "Erupción volcánica", "icon": "🌋", "color": "#F97316", "source": "GDACS" },
+  "cyclone":    { "id": "cyclone",    "label": "Ciclón / Huracán",   "icon": "🌀", "color": "#8B5CF6", "source": "GDACS" },
+  "flood":      { "id": "flood",      "label": "Inundación",         "icon": "💧", "color": "#06B6D4", "source": "GDACS" },
+  "wildfire":   { "id": "wildfire",   "label": "Incendio forestal",  "icon": "🔥", "color": "#DC2626", "source": "GDACS" }
+}

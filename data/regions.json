@@ -1,0 +1,6 @@
+[
+  { "id": "pac-ring", "name": "Cinturón de Fuego del Pacífico", "risk": "extreme", "bounds": { "south": -60, "north": 70, "west": 120, "east": -60 } },
+  { "id": "alpide",   "name": "Cinturón Alpide",                "risk": "high",    "bounds": { "south": 10,  "north": 50, "west": -10, "east": 140 } },
+  { "id": "carib",    "name": "Caribe",                         "risk": "high",    "bounds": { "south": 5,   "north": 30, "west": -90, "east": -55 } },
+  { "id": "andes",    "name": "Andes",                         "risk": "high",    "bounds": { "south": -55, "north": 12, "west": -80, "east": -60 } }
+]

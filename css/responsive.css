@@ -1,0 +1,60 @@
+/* ============================================================
+   GEOALERT — responsive.css
+   Diseño adaptable: tablet y móvil
+   ============================================================ */
+
+/* Tablet (≤ 900px) */
+@media (max-width: 900px) {
+  :root { --sidebar-w: 300px; }
+
+  .stats-bar { gap: 12px; }
+  .stat-item { display: none; }
+  .stat-item:first-child { display: flex; }
+
+  .header-center { max-width: 240px; }
+}
+
+/* Móvil (≤ 640px) */
+@media (max-width: 640px) {
+  :root { --header-h: 48px; --sidebar-w: 100vw; }
+
+  .logo-text { font-size: 15px; }
+  .logo-badge { display: none; }
+  .stats-bar { display: none; }
+  .header-center { display: none; }
+
+  .sidebar {
+    position: fixed;
+    top: var(--header-h);
+    left: 0; bottom: 0;
+    width: 100vw;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 600;
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .map-legend { display: none; }
+  .map-controls { top: 8px; right: 8px; }
+  .modal-card { margin: 10px; max-height: 95vh; }
+  .modal-grid { grid-template-columns: 1fr; }
+  .toast-container { right: 8px; bottom: 40px; }
+  .toast { min-width: 240px; max-width: calc(100vw - 16px); }
+
+  .filters-panel { padding: 10px 12px; }
+}
+
+/* Pantalla muy pequeña (≤ 360px) */
+@media (max-width: 360px) {
+  .event-card { padding: 10px 12px; }
+  .event-mag-badge { width: 38px; height: 38px; font-size: 11px; }
+}
+
+/* Pantalla grande (≥ 1400px) */
+@media (min-width: 1400px) {
+  :root { --sidebar-w: 380px; }
+  .stats-bar { gap: 28px; }
+  .header-center { max-width: 600px; }
+}

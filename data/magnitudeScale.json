@@ -1,0 +1,12 @@
+[
+  { "min": 0,   "max": 1,   "label": "Micro",     "description": "No se siente. Solo detectado por sismógrafos.",        "color": "#94A3B8", "effects": "Ninguno" },
+  { "min": 1,   "max": 2,   "label": "Menor",     "description": "Raramente sentido. Puede ser registrado.",             "color": "#BAE6FD", "effects": "Ninguno" },
+  { "min": 2,   "max": 3,   "label": "Pequeño",   "description": "Sentido ligeramente por algunas personas.",            "color": "#6EE7B7", "effects": "Ninguno" },
+  { "min": 3,   "max": 4,   "label": "Ligero",    "description": "Notado por personas en interiores.",                   "color": "#FDE68A", "effects": "Daños menores" },
+  { "min": 4,   "max": 5,   "label": "Moderado",  "description": "Sentido por todos. Objetos caen en interior.",         "color": "#FCD34D", "effects": "Daños ligeros" },
+  { "min": 5,   "max": 6,   "label": "Fuerte",    "description": "Daños en estructuras débiles o mal construidas.",      "color": "#FB923C", "effects": "Daños moderados" },
+  { "min": 6,   "max": 7,   "label": "Muy fuerte","description": "Destructivo en zonas hasta 180 km del epicentro.",     "color": "#EF4444", "effects": "Daños severos" },
+  { "min": 7,   "max": 8,   "label": "Grande",    "description": "Daños serios en zonas de varios cientos de km.",      "color": "#DC2626", "effects": "Severo. Posible tsunami." },
+  { "min": 8,   "max": 9,   "label": "Enorme",    "description": "Destrucción total cerca del epicentro.",              "color": "#B91C1C", "effects": "Muy severo. Tsunami probable." },
+  { "min": 9,   "max": 10,  "label": "Épico",     "description": "Raro. Devastación casi total en áreas extensas.",      "color": "#7F1D1D", "effects": "Catastrófico. Tsunami seguro." }
+]

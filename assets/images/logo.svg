@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+  <circle cx="24" cy="24" r="18" fill="#EF4444" opacity="0.2"/>
+  <circle cx="24" cy="24" r="12" fill="#EF4444" opacity="0.4"/>
+  <circle cx="24" cy="24" r="6" fill="#EF4444"/>
+  <text x="52" y="32" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#e6edf3">GeoAlert</text>
+  <rect x="52" y="36" width="80" height="2" rx="1" fill="#EF4444" opacity="0.4"/>
+</svg>
